@@ -41,22 +41,22 @@ void loop()
 
   if(flag == 1 && t == 0){
     firstorder(samplex, &changex);
-    firstorder(sampley, &changey);
-    firstorder(samplez, &changez);
-    firstorder(sampleemg, &changeemg);
-
-    secondorder(samplex, &changex2nd);
-    secondorder(sampley, &changey2nd);
-    secondorder(samplez, &changez2nd);
-    secondorder(sampleemg, &changeemg2nd);
+//    firstorder(sampley, &changey);
+//    firstorder(samplez, &changez);
+//    firstorder(sampleemg, &changeemg);
+//
+//    secondorder(samplex, &changex2nd);
+//    secondorder(sampley, &changey2nd);
+//    secondorder(samplez, &changez2nd);
+//    secondorder(sampleemg, &changeemg2nd);
 
 
   }
 
-  Serial.print((int) changex);
+  Serial.print(changex);
   Serial.print(" ");
 
-  Serial.print((int)changex2nd);
+  Serial.print(changex2nd);
   Serial.println(" ");
   
   t++;
@@ -269,24 +269,4 @@ void readEMG(){
   Serial.print(filteredMeasurement);
   Serial.print(" ");
   sampleemg[t] = filteredMeasurement;
-}
-
-void firstorder(float* sample, float* change){
-  int i;
-
-  for(i = 0, change = 0; i<samplesize-1; i++){
-    *change +=  (sample[i+1] - sample[i]);
-  }
-  
-    *change /= samplesize-1;
-}
-
-void secondorder(float* sample, float* change){
-  int i;
-
-  for(i = 0, change = 0; i<samplesize-2; i++){
-    *change += (int) (sample[i+2] - sample[i+1])-(sample[i+1] - sample[i]);
-  }
-  
-  *change /= samplesize-2;
 }
