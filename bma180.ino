@@ -1,8 +1,10 @@
+#include <Kalman.h>
+
 #include <Wire.h>
-#include <Filters.h>
 
 #define address 0x40
-float filterFrequency =20;
+double measurement, filteredMeasurement;
+Kalman myFilter(0.125,32,1023,0); //suggested initial values for high noise filtering
 
 void setup()
 {
@@ -17,7 +19,7 @@ void loop()
 
   readAccel();
 
-  delay(100);
+  delay(50);
 }
 
 int x;
@@ -48,9 +50,8 @@ void readAccel()
     temp = temp >> 2;
   }
 
-   FilterOnePole lowpassFilter( LOWPASS, filterFrequency );   
-
-  lowpassFilter.input( temp );
+  measurement = (double) temp;
+  filteredMeasurement = myFilter.getFilteredValue(measurement);
   // Serial.print("X = ");
   Serial.print(temp);
   Serial.print(" ");
@@ -75,7 +76,8 @@ void readAccel()
     temp = temp >> 2;
   }
 
-  lowpassFilter.input( temp );
+  measurement = (double) temp;
+  filteredMeasurement = myFilter.getFilteredValue(measurement);
   // Serial.print("Y = ");
   Serial.print(temp);
   Serial.print(" ");
@@ -99,7 +101,8 @@ void readAccel()
     temp = temp >> 2;
   }
 
-  lowpassFilter.input( temp );
+  measurement = (double) temp;
+  filteredMeasurement = myFilter.getFilteredValue(measurement);
   // Serial.print("Z = ");
   Serial.print(temp);
   Serial.println(" ");
