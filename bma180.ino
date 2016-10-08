@@ -45,12 +45,10 @@ void loop()
 //    firstorder(samplez, &changez);
 //    firstorder(sampleemg, &changeemg);
 //
-//    secondorder(samplex, &changex2nd);
+    secondorder(samplex, &changex2nd);
 //    secondorder(sampley, &changey2nd);
 //    secondorder(samplez, &changez2nd);
 //    secondorder(sampleemg, &changeemg2nd);
-
-
   }
 
   Serial.print(changex);
@@ -61,7 +59,9 @@ void loop()
   
   t++;
   flag = 1;
-  if(t==samplesize) t = 0;
+  if(t==samplesize){
+    t = 0;
+  }
 
   delay(50);
 }
@@ -96,7 +96,7 @@ void readAccel()
 
   /*set kalman params for accelerometer*/
   /*q: process noise covariance, r = measurement noise covariance, p = estimation error covariance*/
-  myFilter.setParameters(0.12,31,1023);
+  myFilter.setParameters(0.125,32,1023);
   
   measurement = (double) temp;
   filteredMeasurement = myFilter.getFilteredValue(measurement);
@@ -125,7 +125,7 @@ void readAccel()
     temp |= Wire.read();
     temp = temp >> 2;
   }
-
+  myFilter.setParameters(0.12,30,1023);
   measurement = (double) temp;
   filteredMeasurement = myFilter.getFilteredValue(measurement);
   // Serial.print("Y = ");
@@ -152,7 +152,7 @@ void readAccel()
     temp |= Wire.read();
     temp = temp >> 2;
   }
-
+  myFilter.setParameters(0.12,30,1023);
   measurement = (double) temp;
   filteredMeasurement = myFilter.getFilteredValue(measurement);
   // Serial.print("Z = ");
@@ -269,4 +269,23 @@ void readEMG(){
   Serial.print(filteredMeasurement);
   Serial.print(" ");
   sampleemg[t] = filteredMeasurement;
+}
+
+void firstorder(float* sample, float* change){
+  int i;
+  for(i = 0, *change = 0; i<samplesize-1; i++){
+    *change +=  (sample[i+1] - sample[i]);
+  }
+  
+    *change /= samplesize-1;
+}
+
+void secondorder(float* sample, float* change){
+  int i;
+
+  for(i = 0, *change = 0; i<samplesize-2; i++){
+    *change += (int) (sample[i+2] - sample[i+1])-(sample[i+1] - sample[i]);
+  }
+  
+  *change /= samplesize-2;
 }
