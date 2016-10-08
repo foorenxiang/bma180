@@ -21,7 +21,7 @@ void loop()
   readEMG();
   readAccel();
 
-  delay(200);
+  delay(50);
 }
 
 int x;
@@ -53,13 +53,14 @@ void readAccel()
   }
 
   /*set kalman params for accelerometer*/
-  setParameters(0.125,32,1023);
+  /*q: process noise covariance, r = measurement noise covariance, p = estimation error covariance*/
+  myFilter.setParameters(0.12,31,1023);
   
   measurement = (double) temp;
   filteredMeasurement = myFilter.getFilteredValue(measurement);
   // Serial.print("X = ");
 //  Serial.print(temp);
-  Serial.print(temp);
+  Serial.print(filteredMeasurement);
   Serial.print(" ");
   result = Wire.endTransmission();
 
@@ -86,7 +87,7 @@ void readAccel()
   filteredMeasurement = myFilter.getFilteredValue(measurement);
   // Serial.print("Y = ");
 //  Serial.print(temp);
-  Serial.print(temp);
+  Serial.print(filteredMeasurement);
   Serial.print(" ");
   result = Wire.endTransmission();
 
@@ -112,7 +113,7 @@ void readAccel()
   filteredMeasurement = myFilter.getFilteredValue(measurement);
   // Serial.print("Z = ");
 //  Serial.print(temp);
-  Serial.print(temp);
+  Serial.print(filteredMeasurement);
   Serial.print(" ");
   result = Wire.endTransmission();
 
@@ -217,7 +218,7 @@ void readId()
 
 void readEMG(){
   /*set kalman params for EMG sensors*/
-  setParameters(0.125,32,1023); //default values
+  myFilter.setParameters(0.125,32,1023); //default values
   measurement = (double) analogRead(A0);
   filteredMeasurement = myFilter.getFilteredValue(measurement);
   Serial.println(filteredMeasurement);
