@@ -4,10 +4,12 @@
 
 #define address 0x40
 double measurement, filteredMeasurement;
+/*q: process noise covariance, r = measurement noise covariance, p = estimation error covariance*/
 Kalman myFilter(0.125,32,1023,0); //suggested initial values for high noise filtering
 
 void setup()
 {
+  pinMode(A0, INPUT);
   Wire.begin();
   Serial.begin(115200);
   initBMA180();
@@ -16,10 +18,10 @@ void setup()
 
 void loop()
 {
-
+  readEMG();
   readAccel();
 
-  delay(50);
+  delay(200);
 }
 
 int x;
@@ -50,9 +52,13 @@ void readAccel()
     temp = temp >> 2;
   }
 
+  /*set kalman params for accelerometer*/
+  setParameters(0.125,32,1023);
+  
   measurement = (double) temp;
   filteredMeasurement = myFilter.getFilteredValue(measurement);
   // Serial.print("X = ");
+//  Serial.print(temp);
   Serial.print(temp);
   Serial.print(" ");
   result = Wire.endTransmission();
@@ -79,6 +85,7 @@ void readAccel()
   measurement = (double) temp;
   filteredMeasurement = myFilter.getFilteredValue(measurement);
   // Serial.print("Y = ");
+//  Serial.print(temp);
   Serial.print(temp);
   Serial.print(" ");
   result = Wire.endTransmission();
@@ -104,10 +111,12 @@ void readAccel()
   measurement = (double) temp;
   filteredMeasurement = myFilter.getFilteredValue(measurement);
   // Serial.print("Z = ");
+//  Serial.print(temp);
   Serial.print(temp);
-  Serial.println(" ");
+  Serial.print(" ");
   result = Wire.endTransmission();
 
+  
   // Serial.println();
   /*End of code added by RX*/
 }
@@ -205,3 +214,12 @@ void readId()
   checkResult(result);
   delay(10);
 }
+
+void readEMG(){
+  /*set kalman params for EMG sensors*/
+  setParameters(0.125,32,1023); //default values
+  measurement = (double) analogRead(A0);
+  filteredMeasurement = myFilter.getFilteredValue(measurement);
+  Serial.println(filteredMeasurement);
+}
+
