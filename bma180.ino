@@ -6,59 +6,86 @@
 double measurement, filteredMeasurement;
 Kalman myFilter(0.125,30,1023,0); //suggested initial values for high noise filtering
 
-#define samplesize 3
+#define samplesize 4
 float samplex[samplesize] = {0}; //accelerometer x axis
 float sampley[samplesize] = {0}; 
 float samplez[samplesize] = {0};
-float sampleemg[samplesize] = {0};
 
 float changex = 0;
 float changey = 0;
 float changez = 0;
-float changeemg = 0;
 
 float changex2nd = 0;
 float changey2nd = 0;
 float changez2nd = 0;
-float changeemg2nd = 0;
+
+double peakxtime = 0;
+double peakytime = 0;
+double peakztime = 0;
+double thresholdtime = 1800;
+
+int xthreshold = 2;
+int ythreshold = 2;
+int zthreshold = 2;
 
 int t = 0; //tracker
 int flag = 0; //first sample set tracker
+int peakflag = 0;
 
 void setup()
 {
   Wire.begin();
   Serial.begin(115200);
   initBMA180();
+  pinMode(13, OUTPUT);
   delay(2000);
 }
 
 void loop()
 {
-  myFilter.setParameters(0.125,30,1023);
   readAccel();
-//  myFilter.setParameters(0.125,32,1023);
-//  readEMG();
 //
   if(flag == 1 && t == 0){
     firstorder(samplex, &changex);
-//    firstorder(sampley, &changey);
-//    firstorder(samplez, &changez);
-//    firstorder(sampleemg, &changeemg);
-//
+    firstorder(sampley, &changey);
+    firstorder(samplez, &changez);
+    
     secondorder(samplex, &changex2nd);
-//    secondorder(sampley, &changey2nd);
-//    secondorder(samplez, &changez2nd);
-//    secondorder(sampleemg, &changeemg2nd);
+    secondorder(sampley, &changey2nd);
+    secondorder(samplez, &changez2nd);
   }
-  Serial.print(changex);
+  Serial.print(samplex[t]);
   Serial.print(" ");
+  Serial.print(sampley[t]);
+  Serial.print(" ");
+  Serial.print(samplez[t]);
+  Serial.print(" ");
+  
   Serial.print(changex2nd);
+  Serial.print(" ");
+  Serial.print(changey2nd);
+  Serial.print(" ");
+  Serial.print(changez2nd);
   Serial.println();
+
+  if(changex2nd>xthreshold) peakxtime = millis();
+  if(changey2nd>ythreshold) peakytime = millis();
+
+  double timenow = millis();
+  if(timenow - peakxtime > thresholdtime && timenow - peakytime > thresholdtime && peakflag >50){
+    digitalWrite(13, HIGH);
+    Serial.println("Timeout!");
+  }
+
+  if(changez2nd>zthreshold){
+    peakxtime = timenow;
+    peakytime = timenow;
+  }
 
   t++;
   if(t == samplesize) t = 0;
   flag = 1;
+  peakflag++;
 
   delay(50);
 }
@@ -95,8 +122,8 @@ void readAccel()
   filteredMeasurement = myFilter.getFilteredValue(measurement);
   samplex[t] = filteredMeasurement;
   // Serial.print("X = ");
-  Serial.print(filteredMeasurement);
-  Serial.print(" ");
+//  Serial.print(filteredMeasurement);
+//  Serial.print(" ");
   result = Wire.endTransmission();
 
   /*Added by RX*/
@@ -122,8 +149,8 @@ void readAccel()
   filteredMeasurement = myFilter.getFilteredValue(measurement);
   // Serial.print("Y = ");
   sampley[t] = filteredMeasurement;
-  Serial.print(filteredMeasurement);
-  Serial.print(" ");
+//  Serial.print(filteredMeasurement);
+//  Serial.print(" ");
   result = Wire.endTransmission();
 
   /*For Z axis*/
@@ -148,8 +175,8 @@ void readAccel()
   filteredMeasurement = myFilter.getFilteredValue(measurement);
   samplez[t] = filteredMeasurement;
   // Serial.print("Z = ");
-  Serial.print(filteredMeasurement);
-  Serial.print(" ");
+//  Serial.print(filteredMeasurement);
+//  Serial.print(" ");
   result = Wire.endTransmission();
 
   // Serial.println();
@@ -248,16 +275,6 @@ void readId()
   result = Wire.endTransmission();
   checkResult(result);
   delay(10);
-}
-
-void readEMG(){
-  /*set kalman params for EMG sensors*/
-  myFilter.setParameters(0.125,32,1023); //default values
-  measurement = (double) analogRead(A0);
-  filteredMeasurement = myFilter.getFilteredValue(measurement);
-  Serial.print(filteredMeasurement);
-  Serial.println("");
-  sampleemg[t] = filteredMeasurement;
 }
 
 void firstorder(float* sample, float* change){
