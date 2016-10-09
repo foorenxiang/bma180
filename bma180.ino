@@ -1,10 +1,10 @@
 #include <Kalman.h>
+
 #include <Wire.h>
 
 #define address 0x40
 double measurement, filteredMeasurement;
-/*q: process noise covariance, r = measurement noise covariance, p = estimation error covariance*/
-Kalman myFilter(0.125,32,1023,0); //suggested initial values for high noise filtering
+Kalman myFilter(0.125,30,1023,0); //suggested initial values for high noise filtering
 
 #define samplesize 3
 float samplex[samplesize] = {0}; //accelerometer x axis
@@ -27,7 +27,6 @@ int flag = 0; //first sample set tracker
 
 void setup()
 {
-  pinMode(A0, INPUT);
   Wire.begin();
   Serial.begin(115200);
   initBMA180();
@@ -35,10 +34,12 @@ void setup()
 }
 
 void loop()
-{ 
-  readEMG();
+{
+  myFilter.setParameters(0.125,30,1023);
   readAccel();
-
+//  myFilter.setParameters(0.125,32,1023);
+//  readEMG();
+//
   if(flag == 1 && t == 0){
     firstorder(samplex, &changex);
 //    firstorder(sampley, &changey);
@@ -50,18 +51,14 @@ void loop()
 //    secondorder(samplez, &changez2nd);
 //    secondorder(sampleemg, &changeemg2nd);
   }
-
   Serial.print(changex);
   Serial.print(" ");
-
   Serial.print(changex2nd);
-  Serial.println(" ");
-  
+  Serial.println();
+
   t++;
+  if(t == samplesize) t = 0;
   flag = 1;
-  if(t==samplesize){
-    t = 0;
-  }
 
   delay(50);
 }
@@ -94,17 +91,12 @@ void readAccel()
     temp = temp >> 2;
   }
 
-  /*set kalman params for accelerometer*/
-  /*q: process noise covariance, r = measurement noise covariance, p = estimation error covariance*/
-  myFilter.setParameters(0.125,32,1023);
-  
   measurement = (double) temp;
   filteredMeasurement = myFilter.getFilteredValue(measurement);
+  samplex[t] = filteredMeasurement;
   // Serial.print("X = ");
-//  Serial.print(temp);
   Serial.print(filteredMeasurement);
   Serial.print(" ");
-  samplex[t] = filteredMeasurement;
   result = Wire.endTransmission();
 
   /*Added by RX*/
@@ -125,14 +117,13 @@ void readAccel()
     temp |= Wire.read();
     temp = temp >> 2;
   }
-  myFilter.setParameters(0.12,30,1023);
+
   measurement = (double) temp;
   filteredMeasurement = myFilter.getFilteredValue(measurement);
   // Serial.print("Y = ");
-//  Serial.print(temp);
+  sampley[t] = filteredMeasurement;
   Serial.print(filteredMeasurement);
   Serial.print(" ");
-  sampley[t] = filteredMeasurement;
   result = Wire.endTransmission();
 
   /*For Z axis*/
@@ -152,17 +143,15 @@ void readAccel()
     temp |= Wire.read();
     temp = temp >> 2;
   }
-  myFilter.setParameters(0.12,30,1023);
+
   measurement = (double) temp;
   filteredMeasurement = myFilter.getFilteredValue(measurement);
+  samplez[t] = filteredMeasurement;
   // Serial.print("Z = ");
-//  Serial.print(temp);
   Serial.print(filteredMeasurement);
   Serial.print(" ");
-  samplez[t] = filteredMeasurement;
   result = Wire.endTransmission();
 
-  
   // Serial.println();
   /*End of code added by RX*/
 }
@@ -267,7 +256,7 @@ void readEMG(){
   measurement = (double) analogRead(A0);
   filteredMeasurement = myFilter.getFilteredValue(measurement);
   Serial.print(filteredMeasurement);
-  Serial.print(" ");
+  Serial.println("");
   sampleemg[t] = filteredMeasurement;
 }
 
